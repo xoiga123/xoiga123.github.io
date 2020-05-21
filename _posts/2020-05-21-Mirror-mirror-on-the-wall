@@ -5,7 +5,7 @@ title: Little mirror program
 
 # 09/05/2020 - The mirror
 
-### Recommended music: X - Ed Sheeran
+### Recommended music: Nurture - Porter Robinson
 
 My friend asked me to make a mirror program with the following specs:
 - Running in the background.
@@ -89,9 +89,10 @@ You did your best, don't be ashamed.
 
 # 18/05/2020 The overhaul
 
-### Recommended music: Gián đoạn - Thành Luke
+### Recommended music: X - Ed Sheeran
 
-From 4 down to 2 libraries, I plan on a complete overhaul.
+My friend asked me for another thing, which is zooming in and out of the mirrored image. Okay, will do. Let's just continue working
+on the specs first. From 4 down to 2 libraries, I plan on a complete overhaul.
 
 ```python
 from PIL import Image, ImageGrab
@@ -103,6 +104,62 @@ im = im.transpose(Image.FLIP_LEFT_RIGHT)
 im.show()
 ```
 
-Look how clean that is. Like an angel banishing the wreck I made several days ago *I excluded the input of hotkeys though*. 
-But, it has a downside. A deal-changing one. The show() method of PIL is for **debugging** only, so the lib doesn't have any method
-to close the image. Okay, cool
+Look how clean that is. Like an angel banishing the wreck I made several days ago *I excluded the input of hotkeys though*.
+Sadly, the image viewer does pop up, but there is no image. Hello Stackoverflow, I have come to you again.
+
+> show() tries to execute the default image viewer with a start /wait command on a temporary image file. The /wait parameter is supposed to wait until the viewer exits, so that the file can be deleted. Unfortunately the default viewer under Vista and Windows 7 does not respond properly to /wait and return even before they've opened the file; the file gets deleted before it can be displayed.
+> The usual fix is to edit ImageShow.py in the PIL package and add an extra command to wait a few seconds before deleting the file. This is a kludge, but it works most of the time.
+
+Digging into the lib, what I have to put in is 
+```
+'start "Pillow" /WAIT "%s" '
+"&& ping -n 2 127.0.0.1 >NUL "
+'&& del /f "%s"' % (file, file)
+```
+Let's break that down, shall we? First, the program capture the image, then saves it to a tmp folder and attemps to open it.
+The address of that temporary image file is `file`. `start`, well, starts a program and **supposedly** giving it a handle called
+"Pillow" to open the image. Then, it does a hacky hacky trick. It pings the localhost, which is always available, two times.
+The time between each pings is one second. Then it outputs that ping to NUL in order to delete it. This creates a timeout so the image viewer
+**gets** the image first before it subsequently deletes the image later. My image does show up now. Nice.
+
+But, it has a downside. A deal-breaking one. The show() method of PIL is for **debugging** only. Which means, the lib try to detect the OS
+(Windows, Mac, Unix) and open the default image viewing program, so it doesn't have any method
+to close the image. Cool. Now I have 2 choices. Either I implement a GUI (Graphical User Interface) or I find a way to
+close that damned image. There's no no no way I'm learning PyQT or TkInter for a small program like this. So I blindly push forward on
+the road that will lead me to hell. 
+
+The Microsoft Photos program is the program showing my mirrored image. So I only have to figure out how to close a program that I knew the name of, right?
+Not so fast. What if the user has several instances of Microsoft Photos opened around for other purposes? I can't afford to kill everything,
+this would be a catatrosphe. I don't want to get a 1-star review IRL by my friend. Or how about mapping a certain hotkey to `ALT + F4` to close the image?
+That would work all the time, and fail all the time too. In the rare event of the user opens the mirror, then focuses on another program,
+I will be at fault for closing their working program with hours of work unsaved. Making sure to focus on the image viewer first?
+Yeah I guess I could do that, but I'm not taking any chances. I will find a reliable way to do it.
+
+From what I understand, my python script calls the image viewer, and the viewer is a subprocess of my script. There has to be a way
+to close a process, or a subprocess. I **supposedly** have a handle called "Pillow" before. A command line to kill a process is enough?
+` taskkill /FI "WindowTitle eq Pillow*" /T /F ` kills a program called "Pillow". Yup, doesn't work. No idea why. Moving on.
+I look into psutil and subprocess libraries, which provides ways to open and kill any process. Here I learned about PID (Process ID)
+and how to close a program with a certain PID.
+
+```python
+def kill_proc_tree(pid, including_parent=True):    
+    parent = psutil.Process(pid)
+    children = parent.children(recursive=True)
+    for child in children:
+        child.kill()
+    gone, still_alive = psutil.wait_procs(children, timeout=5)
+    if including_parent:
+        parent.kill()
+        parent.wait(5)
+```
+
+Kills a process and all it's subprocesses. Does. Not. Work. Zero idea why.
+
+Instead of using os.system() command to open the image viewer, I switch to subprocess.Popen() to get a proper handle on the image viewer.
+Long story short, that handle is also wrong. It doesn't point to the Microsoft Photos program. I give up for the mean time.
+
+# 20/05/2020 The hell (literally, not an exclamation)
+
+### Recommended music: Gián đoạn - Thành Luke
+
+Why is life so hard on me? I just want to close a photo, please.
