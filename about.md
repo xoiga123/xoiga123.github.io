@@ -4,12 +4,14 @@ title: About
 permalink: /about/
 ---
 
-Some information about you!
+This is your average boy and his easily forgotten dairy.
+This may or may not become my portfolio, depending on how bad my pet projects can get.
 
-### More Information
+### How things are around here
 
-A place to include any other types of information that you'd like to include about yourself.
+I consider this my blog so everything is just my train of thought. You can ride along for fun or leave, I'm sure there are many better blogs than mine. Take it with a grain of salt.
 
 ### Contact me
 
-[email@domain.com](mailto:email@domain.com)
+Via footer links below.
+Please don't call my phone number if you happen to know it. Chances are I'm not picking up. Social medias are more than enough.
