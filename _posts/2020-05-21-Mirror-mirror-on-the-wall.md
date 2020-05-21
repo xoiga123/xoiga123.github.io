@@ -87,7 +87,7 @@ That's almost like 3 libraries for 3 tasks. Opencv has to go with numpy, and do 
 of pyautogui, I've learned that they actually use PIL (Python Imaging Library) to capture the image. So I went with PIL instead of pyautogui.
 You did your best, don't be ashamed.
 
-# 18/05/2020 The overhaul
+# 18/05/2020 - The overhaul
 
 ### Recommended music: X - Ed Sheeran
 
@@ -158,8 +158,18 @@ Kills a process and all it's subprocesses. Does. Not. Work. Zero idea why.
 Instead of using os.system() command to open the image viewer, I switch to subprocess.Popen() to get a proper handle on the image viewer.
 Long story short, that handle is also wrong. It doesn't point to the Microsoft Photos program. I give up for the mean time.
 
-# 20/05/2020 The hell (literally, not an exclamation)
+# 20/05/2020 - The hell (literally, not an exclamation)
 
 ### Recommended music: Gián đoạn - Thành Luke
 
 Why is life so hard on me? I just want to close a photo, please.
+
+Short story long, I used `openimg = subprocess.Popen(['explorer', file]` to open the image on my Windows 10. That is the default way (and also cross-windows) to do so, because I don't have to specify the path of any program to open the image. Just let Windows Explorer do it's work. But this is the main problem. You see, I actually called Windows Explorer, which in turn calls Microsoft Photos and immediately closes down. The reason cmd, psutil and subprocess don't work is they have been trying to close a program which is already closed. That explains everything, from the "Pillow" handle of cmd, the psutil.Process(pid) being wrong, and the subprocess.pid also being wrong. None of those PIDs exist in Task Manager, because they committed ~~suicide~~ not alive. Now the Microsoft Photos program I have is actually an orphan process, a process where it's parent has died and keeps running until it reads a depressing manga and takes it's own life, maybe. An orphan process is adopted by it's grandfather or `init` (PID 1), the ancestor of all programs. Also I learned that there are zombie processes, where they died but their parent doesn't know about it's dying signal, so they still lives on in the world of the living. ~~same~~. 
+
+It seems like the only way out is finding the exact path of Microsoft Photos and put it in subprocess.popen(), therefore getting a real handle. Here comes another surprise. It is called an universal app, a program in the Microsoft Store and it gets downloaded in your Windows PC automatically, so there is no .exe (?!) to open it. Supporters on Microsofts forums, who always brag about their "MVP supporter of the year" have no clue either. There is actually a path, but it is inside %AppData%, a hidden and needing permission folder, and the name is the version of the app, so getting in is not troublesome, it's just that you don't know where you're getting into. A deadend, once again.
+
+Luckily, I found that you could use a .exe to open Microsoft Photo Viewer, the good old program you have on Windows XP through early versions of Windows 10. Microsoft decided to get rid of it lately, but they're still keeping a DLL file. Who knows why. Thanks to a kind stranger on Stackoverflow, `openimg = subprocess.Popen(["rundll32.exe","shimgvw.dll,ImageView_Fullscreen",file])` did the trick. I can close it later with `openimg.terminate()`.
+
+Oh and idk where to put this so Imma do it here. I also considered `threading` lib in python to use another thread and open the image there, then close that thread. But if you actually think about it, closing my own process in my only thread doesn't kill the image viewer anyway, so how can another process help? That's just a theory that I'm 90% positive about, but it could work according to an answer on Stackoverflow. Maybe someone out there can try it and upvote/downvote that answer? I got my problem solved so I'm not wasting my time lmao.
+
+Here's the thing, with the image viewer from opencv, the opening is very quick, but here it takes about 0.5 to 1 second. Maybe it's because PIL has to save the image then call a program to open it? Perhaps there is a way to capture the picture and display it with less time, because 1 second is probably too much for a quick peek of artists. I'm now looking into mss, a lib that claims it is light-weight and really fast and also cross-platform. Maybe integrating it with PIL will yield better results? That's for another day because I'm really lazy rn lol.
